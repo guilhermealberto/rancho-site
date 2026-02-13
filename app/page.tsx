@@ -84,20 +84,12 @@ export default function LuxuryRealEstate() {
     };
   }, []);
 
-  // 3. RASTREAR CLIQUE (Pixel + API de Conversões)
-  const handleActionClick = (location: string, isWhatsApp: boolean = true) => {
-    if ('fbq' in window && typeof window.fbq === 'function') {
-      trackEvent('ButtonClick', { button_location: location }, true);
-      if (isWhatsApp) {
-        trackEvent('Contact', {
-          content_name: `Interesse via ${location}`,
-          value: 3300000.00,
-          currency: 'BRL'
-        });
-      }
-    }
-    if (isWhatsApp) {
-      window.open(whatsappLinkBase, '_blank');
+  const handleActionClick = (location: string, isNav: boolean = false) => {
+    // Removido o 'true' para evitar o erro ts(2554)
+    trackEvent('ButtonClick', { button_location: location });
+    
+    if (!isNav) {
+      window.location.href = "/obrigado";
     }
   };
 

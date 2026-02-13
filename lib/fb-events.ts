@@ -1,71 +1,45 @@
-/**
- * Helper para enviar eventos ao Pixel (browser) E à API de Conversões (server-side).
- * Usa o mesmo event_id em ambos para desduplicação pela Meta.
- */
-
-function getFbCookies(): { fbp?: string; fbc?: string } {
-  if (typeof document === 'undefined') return {}
-  const cookies = document.cookie.split(';').reduce((acc, c) => {
-    const [k, v] = c.trim().split('=')
-    acc[k] = v
-    return acc
-  }, {} as Record<string, string>)
-  return {
-    fbp: cookies._fbp,
-    fbc: cookies._fbc,
-  }
-}
-
-function generateEventId(): string {
-  return `fb_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
-}
-
-export type FbEventData = Record<string, unknown>
+// lib/fb-events.ts
 
 export function sendToConversionsAPI(
   eventName: string,
-  customData?: FbEventData,
+  customData?: any,
   eventId?: string
 ): void {
-  const id = eventId || generateEventId()
-  const { fbp, fbc } = getFbCookies()
+  const id = eventId || `fb_${Date.now()}`;
+  
+  // Pegar cookies para melhor rastreio
+  const cookies = typeof document !== 'undefined' ? document.cookie.split(';').reduce((acc, c) => {
+    const [k, v] = c.trim().split('=');
+    acc[k] = v;
+    return acc;
+  }, {} as any) : {};
 
-  fetch('/fb-events', {
+  // URL CORRIGIDA PARA O ENDPOINT DO NEXT.JS
+  fetch('/api/fb-events', { 
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      eventName,
+      eventName: eventName,
       eventId: id,
-      userData: { fbp, fbc },
+      userData: { 
+        fbp: cookies._fbp, 
+        fbc: cookies._fbc 
+      },
       customData: customData || {},
-      url: typeof window !== 'undefined' ? window.location.href : '',
+      url: window.location.href,
     }),
-  }).catch(() => {
-    // Silently fail - API de Conversões é complementar ao Pixel
-  })
+  }).catch((err) => console.error("Erro na API de Conversões:", err));
 }
 
-/**
- * Dispara evento no Pixel E na API de Conversões com o mesmo event_id (desduplicação).
- */
 export function trackEvent(
-  eventName: string,
-  customData?: FbEventData,
-  isCustom = false
-): void {
-  if (typeof window === 'undefined') return
+  eventName: string, 
+  customData?: Record<string, any>, 
+  isCustom: boolean = false // O terceiro argumento opcional aqui
+) {
+  if (typeof window === 'undefined') return;
 
-  const eventId = generateEventId()
-
-  // 1. Envia ao Pixel (browser) com eventID para desduplicação
   if (window.fbq) {
-    if (isCustom) {
-      window.fbq('trackCustom', eventName, customData, { eventID: eventId })
-    } else {
-      window.fbq('track', eventName, customData, { eventID: eventId })
-    }
+    const method = isCustom ? 'trackCustom' : 'track';
+    window.fbq(method, eventName, customData);
   }
-
-  // 2. Envia à API de Conversões (server-side)
-  sendToConversionsAPI(eventName, customData, eventId)
 }
