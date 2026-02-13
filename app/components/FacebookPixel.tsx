@@ -5,7 +5,8 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import Script from 'next/script'
 import { useEffect, useRef } from 'react'
 
-const PIXEL_ID = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID
+// Fallback para prod (Vercel): configure NEXT_PUBLIC_FACEBOOK_PIXEL_ID nas variáveis de ambiente
+const PIXEL_ID = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || '734991552819814'
 
 export default function FacebookPixel() {
   const pathname = usePathname()
@@ -24,18 +25,19 @@ export default function FacebookPixel() {
   }, [pathname, searchParams])
 
   const handlePixelLoad = () => {
-    window.dispatchEvent(new CustomEvent('fbq:ready'))
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('fbq:ready'))
+    }
   }
 
-  if (!PIXEL_ID) return null
-
   return (
-    <Script
-      id="fb-pixel"
-      strategy="afterInteractive"
-      onLoad={handlePixelLoad}
-      dangerouslySetInnerHTML={{
-        __html: `
+    <>
+      <Script
+        id="fb-pixel"
+        strategy="afterInteractive"
+        onLoad={handlePixelLoad}
+        dangerouslySetInnerHTML={{
+          __html: `
           !function(f,b,e,v,n,t,s)
           {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
           n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -46,8 +48,19 @@ export default function FacebookPixel() {
           'https://connect.facebook.net/en_US/fbevents.js');
           fbq('init', '${PIXEL_ID}');
           fbq('track', 'PageView');
-        `,
-      }}
-    />
+          if(window.dispatchEvent) window.dispatchEvent(new CustomEvent('fbq:ready'));
+          `,
+        }}
+      />
+      <noscript>
+        <img
+          height="1"
+          width="1"
+          style={{ display: 'none' }}
+          src={`https://www.facebook.com/tr?id=${PIXEL_ID}&ev=PageView&noscript=1`}
+          alt=""
+        />
+      </noscript>
+    </>
   )
 }
