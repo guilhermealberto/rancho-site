@@ -7,20 +7,27 @@ export default function ObrigadoRedirect() {
   const whatsappLink = "https://wa.me/5516997206578?text=Olá,%20vi%20o%20site%20do%20Rancho%20em%20Capitólio%20e%20gostaria%20de%20detalhes.";
 
   useEffect(() => {
-    // Garante que o PageView rode antes do Contact
-    if (window.fbq) {
+    // 1. Verifica se o Pixel está carregado no navegador
+    if (typeof window !== 'undefined' && window.fbq) {
+      console.log("Disparando eventos para o Pixel Rancho...");
+
+      // 2. Dispara PageView primeiro (essencial para a Meta aceitar o Lead)
       window.fbq('track', 'PageView');
+
+      // 3. Dispara o evento de Conversão (Contact)
+      trackEvent('Contact', {
+        content_name: 'Lead Qualificado - Rancho Capitólio',
+        value: 3300000.00,
+        currency: 'BRL'
+      });
     }
 
-    trackEvent('Contact', {
-      content_name: 'Lead Qualificado - Redirect Automático',
-      value: 3300000.00,
-      currency: 'BRL'
-    });
-
+    // 4. Aumentamos para 3500ms (3.5 segundos)
+    // Isso garante que o rastro "bata" no servidor da Meta antes da página fechar
     const timer = setTimeout(() => {
+      console.log("Redirecionando para WhatsApp...");
       window.location.href = whatsappLink;
-    }, 2500); // Aumentei um pouco para garantir o envio
+    }, 3500); 
 
     return () => clearTimeout(timer);
   }, [whatsappLink]);
