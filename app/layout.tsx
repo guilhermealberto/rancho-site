@@ -1,6 +1,5 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import FacebookPixel from './components/FacebookPixel';
@@ -28,10 +27,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* Carregamento do Pixel em todas as páginas */}
-        <Suspense fallback={null}>
-          <FacebookPixel />
-        </Suspense>
+        <FacebookPixel />
         {children}
       </body>
     </html>
