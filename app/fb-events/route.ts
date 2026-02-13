@@ -2,10 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
-  const { eventName, eventId, userData, customData, url } = await body(req);
-  
-  const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
+  const pixelId = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID || process.env.FACEBOOK_PIXEL_ID;
   const token = process.env.FB_ACCESS_TOKEN;
+
+  if (!pixelId || !token) {
+    return NextResponse.json(
+      { error: 'Missing FB_ACCESS_TOKEN or FACEBOOK_PIXEL_ID' },
+      { status: 500 }
+    );
+  }
+
+  const { eventName, eventId, userData, customData, url } = await body(req);
+
+  if (!eventName || !eventId) {
+    return NextResponse.json(
+      { error: 'eventName and eventId are required' },
+      { status: 400 }
+    );
+  }
 
   // Função para Hash SHA256 (Exigência da Meta)
   const hash = (data: string) => data ? crypto.createHash('sha256').update(data.trim().toLowerCase()).digest('hex') : null;
@@ -34,7 +48,19 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify(payload),
   });
 
-  return NextResponse.json(await response.json());
+  const data = await response.json();
+
+  if (!response.ok) {
+    return NextResponse.json(data, { status: response.status });
+  }
+
+  return NextResponse.json(data);
 }
 
-async function body(req: NextRequest) { return await req.json(); }
+async function body(req: NextRequest) {
+  try {
+    return await req.json();
+  } catch {
+    return {};
+  }
+}

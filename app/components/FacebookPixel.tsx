@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { trackEvent } from "@/lib/fb-events";
 
 interface FacebookPixelFn {
   (...args: any[]): void;
@@ -42,7 +43,7 @@ export default function FacebookPixel() {
     }
 
     window.fbq("init", PIXEL_ID);
-    window.fbq("track", "PageView");
+    trackEvent("PageView"); // Pixel + API de Conversões
 
     window.dispatchEvent(new CustomEvent("fbq:ready"));
   }, []);

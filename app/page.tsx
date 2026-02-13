@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { trackEvent } from "@/lib/fb-events";
 
 // --- Componentes Reutilizáveis ---
 
@@ -49,10 +50,10 @@ export default function LuxuryRealEstate() {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
 
-    // 2. DISPARO DO EVENTO VIEWCONTENT AO CARREGAR (aguarda pixel estar pronto)
+    // 2. DISPARO DO EVENTO VIEWCONTENT (Pixel + API de Conversões)
     const fireViewContent = () => {
-      if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('track', 'ViewContent', {
+      if (typeof window !== 'undefined' && 'fbq' in window && typeof window.fbq === 'function') {
+        trackEvent('ViewContent', {
           content_name: 'Landing Page Rancho Capitólio',
           content_category: 'Real Estate Luxury',
           value: 3300000.00,
@@ -83,24 +84,18 @@ export default function LuxuryRealEstate() {
     };
   }, []);
 
-  // 3. FUNÇÃO PARA RASTREAR CLIQUE EM QUALQUER BOTÃO E REDIRECIONAR
+  // 3. RASTREAR CLIQUE (Pixel + API de Conversões)
   const handleActionClick = (location: string, isWhatsApp: boolean = true) => {
-    if (window.fbq) {
-      // Evento Customizado para saber qual botão é mais clicado
-      window.fbq('trackCustom', 'ButtonClick', {
-        button_location: location
-      });
-
-      // Se for clique para contato (WhatsApp), dispara o evento padrão 'Contact'
+    if ('fbq' in window && typeof window.fbq === 'function') {
+      trackEvent('ButtonClick', { button_location: location }, true);
       if (isWhatsApp) {
-        window.fbq('track', 'Contact', {
+        trackEvent('Contact', {
           content_name: `Interesse via ${location}`,
           value: 3300000.00,
           currency: 'BRL'
         });
       }
     }
-
     if (isWhatsApp) {
       window.open(whatsappLinkBase, '_blank');
     }
